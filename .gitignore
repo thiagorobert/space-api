@@ -1,0 +1,9 @@
+# Binaries
+rest_reverse_proxy
+
+# Intellij
+.idea
+space-api.iml
+
+# Private scripts
+docker-push-aws.sh
