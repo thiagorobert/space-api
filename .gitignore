@@ -7,3 +7,6 @@ space-api.iml
 
 # Private scripts
 docker-push-aws.sh
+
+# AWS stuff
+aws
