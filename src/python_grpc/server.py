@@ -7,12 +7,13 @@ from grpc_health.v1 import health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
 from concurrent import futures
 import time
+import tle
 import proto.unary_pb2_grpc as pb2_grpc
 import proto.unary_pb2 as pb2
 
 _THREAD_POOL_SIZE = 10
 _SERVICE_NAMES = (
-    pb2.DESCRIPTOR.services_by_name['Unary'].full_name,
+    pb2.DESCRIPTOR.services_by_name['Tle'].full_name,
     reflection.SERVICE_NAME,
     health.SERVICE_NAME,
 )
@@ -25,19 +26,18 @@ def inputFlags():
     return parser.parse_args()
 
 
-class UnaryService(pb2_grpc.UnaryServicer):
+class TleService(pb2_grpc.TleServicer):
+    def Decode(self, request, context):
+        req = request
+        tle_parts = [req.tle_data.name, req.tle_data.line1, req.tle_data.line2]
+        result = {'decoded': tle.Decode(tle_parts)}
+        return pb2.TleDecodeRes(**result)
 
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def GetServerResponse(self, request, context):
-
-        # get the string from the incoming request
-        message = request.message
-        result = f'Hello I am up and running received "{message}" message from you'
-        result = {'message': result, 'received': True}
-
-        return pb2.MessageResponse(**result)
+    def ToOrbit(self, request, context):
+        req = request
+        tle_parts = [req.tle_data.name, req.tle_data.line1, req.tle_data.line2]
+        result = {'orbit': tle.ToOrbit(tle_parts)}
+        return pb2.TleToOrbitRes(**result)
 
 
 # See https://github.com/grpc/grpc/blob/master/doc/python/server_reflection.md
@@ -64,7 +64,7 @@ def serve(options):
     enableReflectionAPI(server)
     enableHealthChecks(server)
 
-    pb2_grpc.add_UnaryServicer_to_server(UnaryService(), server)
+    pb2_grpc.add_TleServicer_to_server(TleService(), server)
 
     server.add_insecure_port('[::]:' + options.server_port)
     server.start()

@@ -28,9 +28,8 @@ func run() error {
 	mux := runtime.NewServeMux()
 	cred := insecure.NewCredentials()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(cred)}
-	err := gw.RegisterUnaryHandlerFromEndpoint(
-		ctx, mux,  *grpcServerEndpoint, opts)
-	if err != nil {
+	if err := gw.RegisterTleHandlerFromEndpoint(
+		ctx, mux,  *grpcServerEndpoint, opts); err != nil {
 		return err
 	}
 

@@ -25,6 +25,13 @@ RUN pip install \
     grpcio-tools
 RUN pip install --upgrade protobuf
 
+
+# Install space-related libraries.
+# Numba (dep of tletools) needs NumPy 1.21 or less
+RUN pip install numpy==1.21
+RUN pip install TLE-tools
+
+
 # Setup $GOBIN and add it to $PATH.
 ENV GOBIN=/go/bin
 RUN mkdir -p ${GOBIN}
