@@ -1,5 +1,10 @@
 FROM ubuntu:20.04
 
+# Setup code root directory.
+ENV CODE_ROOT=/go/src/thiago.pub/space-api
+RUN mkdir -p ${CODE_ROOT}
+WORKDIR ${CODE_ROOT}
+
 RUN apt-get update
 
 # Install `tzdata` separately to avoid interactive input (see https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image)
@@ -10,12 +15,17 @@ RUN apt-get install -o Acquire::ForceIPv4=true -y \
     python3 \
     python3-pip \
     protobuf-compiler \
-    wget
+    curl
 
 # Install a more recent version of Go (`apt-get install golang` yields 1.1 in this environment).
-RUN wget https://storage.googleapis.com/golang/go1.17.5.linux-amd64.tar.gz
-RUN tar -zxvf go1.17.5.linux-amd64.tar.gz -C /usr/local/
+RUN curl https://storage.googleapis.com/golang/go1.17.5.linux-amd64.tar.gz -o go1.17.5.linux-amd64.tar.gz
+RUN tar -zxf go1.17.5.linux-amd64.tar.gz -C /usr/local/ && rm go1.17.5.linux-amd64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install a more recent version of Node (`apt-get install nodejs` yields 10.19.0 in this environment).
+RUN curl https://nodejs.org/dist/v14.18.3/node-v14.18.3-linux-x64.tar.xz -o node-v14.18.3-linux-x64.tar.xz
+RUN tar -xf node-v14.18.3-linux-x64.tar.xz -C /usr/local/ && rm node-v14.18.3-linux-x64.tar.xz
+ENV PATH="/usr/local/node-v14.18.3-linux-x64/bin:${PATH}"
 
 # Install gRPC support in Python.
 RUN pip install \
@@ -25,7 +35,6 @@ RUN pip install \
     grpcio-reflection \
     grpcio-tools
 
-
 # Install space-related libraries.
 # Numba (dep of tletools) needs NumPy 1.21 or less
 RUN pip install \
@@ -33,15 +42,10 @@ RUN pip install \
     TLE-tools \
     dash
 
-
 # Setup $GOBIN and add it to $PATH.
 ENV GOBIN=/go/bin
 RUN mkdir -p ${GOBIN}
 ENV PATH="${GOBIN}:${PATH}"
-
-# Setup code root directory.
-ENV CODE_ROOT=/go/src/thiago.pub/space-api
-RUN mkdir -p ${CODE_ROOT}
 
 # Copy code.
 COPY google ${CODE_ROOT}/google
