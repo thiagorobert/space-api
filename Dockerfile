@@ -19,17 +19,19 @@ ENV PATH="/usr/local/go/bin:${PATH}"
 
 # Install gRPC support in Python.
 RUN pip install \
+    protobuf \
     grpcio \
     grpcio-health-checking \
     grpcio-reflection \
     grpcio-tools
-RUN pip install --upgrade protobuf
 
 
 # Install space-related libraries.
 # Numba (dep of tletools) needs NumPy 1.21 or less
-RUN pip install numpy==1.21
-RUN pip install TLE-tools
+RUN pip install \
+    numpy==1.21 \
+    TLE-tools \
+    dash
 
 
 # Setup $GOBIN and add it to $PATH.
@@ -89,12 +91,16 @@ RUN go mod tidy -compat=1.17
 RUN go build src/go_rest_proxy/rest_reverse_proxy.go
 
 # Expose requierd ports. This is not required, it's more of a documentation.
-# gRPC server
+# UI
 EXPOSE 8080
 # REST proxy
 EXPOSE 8081
-# gRPC healthcheck
+# gRPC server
 EXPOSE 9090
+# Dash server (to render orbit plots)
+EXPOSE 9091
+# Reserved for future use
+EXPOSE 9092
 
 # Copy and run script that starts gRPC server and REST proxy.
 COPY ./bootstrap.sh ${CODE_ROOT}/bootstrap.sh

@@ -1,13 +1,13 @@
 import argparse
-import sys
+from concurrent import futures
+
 import grpc
 from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
-from concurrent import futures
-import time
 import tle
+import tle_plotter
 import proto.unary_pb2_grpc as pb2_grpc
 import proto.unary_pb2 as pb2
 
@@ -22,7 +22,9 @@ _SERVICE_NAMES = (
 def inputFlags():
     parser = argparse.ArgumentParser(description='Space API gRPC server')
     parser.add_argument(
-        '--server_port', dest='server_port', default='9090', help='server port')
+        '--server_port', dest='server_port', default='9090', help='gRPC server port')
+    parser.add_argument(
+        '--dash_port', dest='dash_port', default='9091', help='Dash server port')
     return parser.parse_args()
 
 
@@ -59,21 +61,21 @@ def enableHealthChecks(server):
         health_servicer.set(service, health_pb2.HealthCheckResponse.SERVING)
 
 
-def serve(options):
+def serve(opts):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE))
     enableReflectionAPI(server)
     enableHealthChecks(server)
 
+    # Start a dash server and plot an orbit, for testing.
+    tle_plotter.PlotOrbit(opts.dash_port)
+
     pb2_grpc.add_TleServicer_to_server(TleService(), server)
 
-    server.add_insecure_port('[::]:' + options.server_port)
+    server.add_insecure_port('[::]:' + opts.server_port)
     server.start()
+    print(f'\ngRPC server running on ":{opts.server_port}"')
     server.wait_for_termination()
 
 
 if __name__ == '__main__':
-    options = inputFlags()
-
-    print(f'\nServer listening at ":{options.server_port}"')
-
-    serve(options)
+    serve(inputFlags())
