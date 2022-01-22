@@ -1,10 +1,6 @@
 FROM ubuntu:20.04
 
-# Setup code root directory.
-ENV CODE_ROOT=/go/src/thiago.pub/space-api
-RUN mkdir -p ${CODE_ROOT}
-WORKDIR ${CODE_ROOT}
-
+# Set up dependencies.
 RUN apt-get update
 
 # Install `tzdata` separately to avoid interactive input (see https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image)
@@ -47,11 +43,18 @@ ENV GOBIN=/go/bin
 RUN mkdir -p ${GOBIN}
 ENV PATH="${GOBIN}:${PATH}"
 
-# Copy code.
+# Set up workdir, copy code.
+ENV CODE_ROOT=/go/src/thiago.pub/space-api
+RUN mkdir -p ${CODE_ROOT}
+WORKDIR ${CODE_ROOT}
 COPY google ${CODE_ROOT}/google
 COPY proto ${CODE_ROOT}/proto
 COPY src ${CODE_ROOT}/src
 COPY tools ${CODE_ROOT}/tools
+
+# Set up Node UI.
+WORKDIR ${CODE_ROOT}/src/ui
+RUN npm install
 
 # Install protoc-gen-go (see https://github.com/grpc-ecosystem/grpc-gateway/)
 WORKDIR ${CODE_ROOT}/tools

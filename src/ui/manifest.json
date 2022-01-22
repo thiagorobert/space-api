@@ -1,0 +1,12 @@
+{
+  "name": "Space!",
+  "short_name": "Space",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fdf6e3",
+  "icons": [{
+    "src": "logo.png",
+    "type": "image/png",
+    "sizes": "230x219"
+  }]
+}

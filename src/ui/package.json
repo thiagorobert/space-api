@@ -1,0 +1,17 @@
+{
+  "name": "Space!",
+  "description": "Space-related application and API.",
+  "version": "0.0.42",
+  "homepage": "https://space.thiago.pub",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:thiagorobert/space-api.git"
+  },
+  "dependencies": {
+    "node-static": "0.7.11"
+  },
+  "devDependencies": {},
+  "scripts": {},
+  "author": "thiagorobert",
+  "license": "Beerware"
+}

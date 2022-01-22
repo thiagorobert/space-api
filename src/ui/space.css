@@ -1,0 +1,29 @@
+.tle-input-header {
+    text-align: center;
+    color: darkgreen;
+}
+
+.tle-input-container {
+}
+
+.tle-input-form {
+    align-items: center;
+    display:flex;
+    flex-direction:column;
+}
+
+.tle-input {
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    height: 7em;
+    padding: 10px;
+    width: 45em;
+}
+
+.tle-input:focus {
+    box-shadow: 0 0 15px 5px #b0e0ee;
+    border: 2px solid #bebede;
+}
+
+.tle-input-button {
+}
