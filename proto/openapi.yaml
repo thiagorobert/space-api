@@ -1,0 +1,72 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/apps/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: Tle API
+    version: 0.0.1
+paths:
+    /space/v1/tle/decode:
+        post:
+            tags:
+                - Tle
+            operationId: Tle_Decode
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TleDecodeReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TleDecodeRes'
+    /space/v1/tle/orbit:
+        post:
+            tags:
+                - Tle
+            operationId: Tle_ToOrbit
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TleToOrbitReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TleToOrbitRes'
+components:
+    schemas:
+        TleData:
+            properties:
+                name:
+                    type: string
+                line1:
+                    type: string
+                line2:
+                    type: string
+        TleDecodeReq:
+            properties:
+                tleData:
+                    $ref: '#/components/schemas/TleData'
+        TleDecodeRes:
+            properties:
+                decoded:
+                    type: string
+        TleToOrbitReq:
+            properties:
+                tleData:
+                    $ref: '#/components/schemas/TleData'
+        TleToOrbitRes:
+            properties:
+                orbit:
+                    type: string
+tags:
+    - name: Tle
