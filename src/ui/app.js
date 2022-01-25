@@ -1,53 +1,29 @@
 const http = require('http')
 const https = require('https')
 const static = require('node-static')
-const decodeHTML = require('decode-html')
+const space = require('space-client-js')
 
 const hostname = '0.0.0.0'
 const port = 8080
-
-function tlePartsToEncodedJson(name, line1, line2) {
-  return new TextEncoder().encode(
-      JSON.stringify({
-        tle_data: {
-          name: name,
-          line1: line1,
-          line2: line2
-        }
-      }))
-}
-
-function orbitRequestOpts(dataLen) {
-  return {
-    hostname: 'api.thiago.pub',
-    port: 443,
-    path: '/space/v1/tle/orbit',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': dataLen
-    }
-  }
-}
-
 const staticFiles = new static.Server(__dirname, { cache: 0 })
+const spaceApi = new space.TleApi(
+    new space.ApiClient(basePath='https://api.thiago.pub'))
 
 function orbit(name, line1, line2, out) {
-  const reqBody = tlePartsToEncodedJson(name, line1, line2)
-  const opts = orbitRequestOpts(reqBody.length)
-  const req = https.request(opts, res => {
-    res.on('data', d => {
+  var tleOrbitReq = new space.TleToOrbitReq()
+  tleOrbitReq.tleData = new space.TleData()
+  tleOrbitReq.tleData.name = name
+  tleOrbitReq.tleData.line1 = line1
+  tleOrbitReq.tleData.line2 = line2
+  var callback = function(error, data, response) {
+    if (error) {
+      console.error(error)
+    } else {
       out.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'})
-      out.end(d.toString())
-    })
-  })
-
-  req.on('error', error => {
-    console.error(error)
-  })
-
-  req.write(reqBody)
-  req.end()
+      out.end(data.orbit)
+    }
+  };
+  spaceApi.tleToOrbit(tleOrbitReq, callback)
 }
 
 const server = http.createServer((req, res) => {
@@ -76,7 +52,10 @@ const server = http.createServer((req, res) => {
        characters.
        */
       const bodyParts = body.split('\n')
-      orbit(bodyParts[3].trim(), bodyParts[4].trim(), bodyParts[5].trim(), res)
+      const name = bodyParts[3].trim().trimLeft()
+      const line1 = bodyParts[4].trim().trimLeft()
+      const line2 = bodyParts[5].trim().trimLeft()
+      orbit(name, line1, line2, res)
     })
   } else {
     staticFiles.serve(req, res)
