@@ -67,7 +67,7 @@ def serve(opts):
     enableHealthChecks(server)
 
     # Start a dash server and plot an orbit, for testing.
-    tle_plotter.PlotOrbit(opts.dash_port)
+    tle_plotter.Start(opts.dash_port)
 
     pb2_grpc.add_TleServicer_to_server(TleService(), server)
 
