@@ -4,11 +4,11 @@ set -e
 
 HOSTNAME="${1:-localhost}"
 GRPCURL_PLAINTEXT="--plaintext"
-if [[ ${HOSTNAME} != "localhost" ]]; then
+if [ ${HOSTNAME} != "localhost" ]; then
   GRPCURL_PLAINTEXT=""
 fi
 REST_ENDPOINT=${HOSTNAME}:8081
-if [[ ${HOSTNAME} != "localhost" ]]; then
+if [ ${HOSTNAME} != "localhost" ]; then
   REST_ENDPOINT=https://${HOSTNAME}
 fi
 
