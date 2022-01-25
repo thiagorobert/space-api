@@ -18,9 +18,19 @@
   </h1>
 
   <form class="tle-input-form"  action="/submit" method="post" enctype="multipart/form-data">
-    <textarea class="tle-input" name="tle" placeholder="Enter TLE" required autofocus></textarea>
+    <textarea class="tle-input" name="tle" placeholder="Enter TLE" required autofocus>{{ tle }}</textarea>
     <button class="tle-input-button" type="submit">Submit</button>
   </form>
+</div>
+
+<div class="output-container">
+  <div class="decoded-tle">
+    {{{ decoded }}}
+  </div>
+  <div class="orbit">
+    {{{ orbit }}}
+    {{{ visualization }}}
+  </div>
 </div>
 
 </body>

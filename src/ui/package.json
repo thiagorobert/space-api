@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "decode-html": "2.0.0",
+    "mustache": "4.2.0",
     "node-static": "0.7.11",
     "space-client-js": "0.0.1"
   },
