@@ -13,7 +13,9 @@ python src/python_grpc/server.py &
 GRPC_SERVER_PID=$!
 ./rest_reverse_proxy &
 REST_PROXY_PID=$!
-node src/ui/app.js &
+node src/ui/app.js \
+  --space_api_endpoint http://localhost:8081 \
+  --orbit_visualizer_endpoint http://localhost:9091 &
 NODE_UI_PID=$!
 
 echo "Background processes started: $GRPC_SERVER_PID $REST_PROXY_PID $NODE_UI_PID"

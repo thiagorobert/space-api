@@ -5,20 +5,35 @@ const space = require('space-client-js')
 const static = require('node-static')
 const mustache = require('mustache')
 
+function getInputFlags() {
+  const inputFlags = require('process').argv.slice(2)
+  return require('minimist')(inputFlags)
+}
+const inputFlags = getInputFlags()
+
 const hostname = '0.0.0.0'
 const port = 8080
 const staticFiles = new static.Server(__dirname, { cache: 0 })
 
 function getSpaceApiEndpoint() {
-  let spaceApiEndpoint = 'https://api.thiago.pub'
-  const inputFlags = require('process').argv.slice(2)
-  const minFlags = require('minimist')(inputFlags)
-  if ('space_api_endpoint' in minFlags) {
-    spaceApiEndpoint = minFlags['space_api_endpoint']
+  let endpoint = 'https://api.thiago.pub'  // default to Production.
+  if ('space_api_endpoint' in inputFlags) {
+    endpoint = inputFlags['space_api_endpoint']
   }
-  console.log(`UI using Space Api at '${spaceApiEndpoint}'`)
+  console.log(`UI using Space Api at '${endpoint}'`)
+  return endpoint
 }
 
+function getOrbitVisualizerEndpoint() {
+  let endpoint = 'http://api.thiago.pub:9091'  // default to Production.
+  if ('orbit_visualizer_endpoint' in inputFlags) {
+    endpoint = inputFlags['orbit_visualizer_endpoint']
+  }
+  console.log(`UI using Orbit Visualizer at '${endpoint}'`)
+  return endpoint
+}
+
+const orbitVisualizerEndpoint = getOrbitVisualizerEndpoint()
 const spaceApi = new space.TleApi(new space.ApiClient(basePath=getSpaceApiEndpoint()))
 
 let template
@@ -85,7 +100,7 @@ function process(tleData, out) {
             tle: [tleData.name, tleData.line1, tleData.line2].join('\n'),
             decoded: decodedToHtml(decoded),
             orbit: '<b>Orbit:</b> ' + data.orbit,
-            visualization: '<iframe class="orbit-visualization" src="http://api.thiago.pub:9091"></iframe>'
+            visualization: `<iframe class="orbit-visualization" src="${orbitVisualizerEndpoint}"></iframe>`
           })
       out.end(rendered)
     }
