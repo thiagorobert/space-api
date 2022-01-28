@@ -29,8 +29,9 @@
 }
 
 .output-container {
-    display:flex;
+    display: flex;
     flex-direction: row;
+    white-space: nowrap;
 }
 
 .orbit {
@@ -45,4 +46,8 @@
     height: 500px;
     border: none;
     overflow: hidden;
+}
+
+b {
+    color: darkgreen;
 }

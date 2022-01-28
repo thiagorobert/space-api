@@ -8,7 +8,18 @@ const mustache = require('mustache')
 const hostname = '0.0.0.0'
 const port = 8080
 const staticFiles = new static.Server(__dirname, { cache: 0 })
-const spaceApi = new space.TleApi(new space.ApiClient(basePath='https://api.thiago.pub'))
+
+function getSpaceApiEndpoint() {
+  let spaceApiEndpoint = 'https://api.thiago.pub'
+  const inputFlags = require('process').argv.slice(2)
+  const minFlags = require('minimist')(inputFlags)
+  if ('space_api_endpoint' in minFlags) {
+    spaceApiEndpoint = minFlags['space_api_endpoint']
+  }
+  console.log(`UI using Space Api at '${spaceApiEndpoint}'`)
+}
+
+const spaceApi = new space.TleApi(new space.ApiClient(basePath=getSpaceApiEndpoint()))
 
 let template
 fs.readFile(__dirname + '/index.html', 'utf-8', function (err, data) {
@@ -44,7 +55,7 @@ function bodyToTleData(body) {
 
 function decodedToHtml(decoded) {
   let out = decoded.replace('TLE(', '<br /><b>')
-  out = out.replace(/=/g, ':</b>&nbsp;')
+  out = out.replace(/=/g, ':</b> ')
   return '<b>TLE:</b>' + out.replace(/, /g, '<br /><b>').slice(0, -1)
 }
 
@@ -62,17 +73,19 @@ function process(tleData, out) {
 
   const toOrbitReq = new space.TleToOrbitReq()
   toOrbitReq.tleData = tleData
-  spaceApi.tleToOrbit(toOrbitReq, function(error, data, response) {
+  spaceApi.tleToOrbit(toOrbitReq, async function(error, data, response) {
     if (error) {
       console.error(error)
     } else {
       out.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'})
+      // TODO: adding a delay to ensure this returns in time to be rendered; should be a promisse.
+      await new Promise(r => setTimeout(r, 500));
       const rendered = mustache.render(template,
           {
             tle: [tleData.name, tleData.line1, tleData.line2].join('\n'),
             decoded: decodedToHtml(decoded),
             orbit: '<b>Orbit:</b> ' + data.orbit,
-            visualization: '<iframe class="orbit-visualization" src="http://localhost:9091"></iframe>'
+            visualization: '<iframe class="orbit-visualization" src="http://api.thiago.pub:9091"></iframe>'
           })
       out.end(rendered)
     }
