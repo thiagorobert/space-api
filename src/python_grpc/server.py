@@ -6,10 +6,11 @@ from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
-import tle
-import tle_plotter
+import corridor_plotter
+import orbit_plotter
 import proto.unary_pb2_grpc as pb2_grpc
 import proto.unary_pb2 as pb2
+import tle
 
 _THREAD_POOL_SIZE = 10
 _SERVICE_NAMES = (
@@ -66,8 +67,10 @@ def serve(opts):
     enableReflectionAPI(server)
     enableHealthChecks(server)
 
-    # Start a dash server and plot an orbit, for testing.
-    tle_plotter.Start(opts.dash_port)
+    # Start Dash server to plot orbits.
+    orbit_plotter.Start(opts.dash_port)
+    # Start Orekit to plot corridors.
+    corridor_plotter.Start()
 
     pb2_grpc.add_TleServicer_to_server(TleService(), server)
 

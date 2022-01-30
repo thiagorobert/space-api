@@ -1,12 +1,11 @@
 FROM ubuntu:20.04
 
-# Set up dependencies.
+# Install dependencies.
 RUN apt-get update
 
 # Install `tzdata` separately to avoid interactive input (see https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image)
 RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata
 
-# Install dependencies.
 RUN apt-get install -o Acquire::ForceIPv4=true -y \
     python3 \
     python3-pip \
@@ -14,43 +13,62 @@ RUN apt-get install -o Acquire::ForceIPv4=true -y \
     curl
 
 # Install a more recent version of Go (`apt-get install golang` yields 1.1 in this environment).
-RUN curl https://storage.googleapis.com/golang/go1.17.5.linux-amd64.tar.gz -o go1.17.5.linux-amd64.tar.gz
+RUN curl -s https://storage.googleapis.com/golang/go1.17.5.linux-amd64.tar.gz -o go1.17.5.linux-amd64.tar.gz
 RUN tar -zxf go1.17.5.linux-amd64.tar.gz -C /usr/local/ && rm go1.17.5.linux-amd64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
-
-# Install a more recent version of Node (`apt-get install nodejs` yields 10.19.0 in this environment).
-RUN curl https://nodejs.org/dist/v14.18.3/node-v14.18.3-linux-x64.tar.xz -o node-v14.18.3-linux-x64.tar.xz
-RUN tar -xf node-v14.18.3-linux-x64.tar.xz -C /usr/local/ && rm node-v14.18.3-linux-x64.tar.xz
-ENV PATH="/usr/local/node-v14.18.3-linux-x64/bin:${PATH}"
-
-# Install gRPC support in Python.
-RUN pip install \
-    protobuf \
-    grpcio \
-    grpcio-health-checking \
-    grpcio-reflection \
-    grpcio-tools
-
-# Install space-related libraries.
-# Numba (dep of tletools) needs NumPy 1.21 or less
-RUN pip install \
-    numpy==1.21 \
-    TLE-tools \
-    dash
 
 # Setup $GOBIN and add it to $PATH.
 ENV GOBIN=/go/bin
 RUN mkdir -p ${GOBIN}
 ENV PATH="${GOBIN}:${PATH}"
 
-# Set up workdir, copy code.
+# Install a more recent version of Node (`apt-get install nodejs` yields 10.19.0 in this environment).
+RUN curl -s https://nodejs.org/dist/v14.18.3/node-v14.18.3-linux-x64.tar.xz -o node-v14.18.3-linux-x64.tar.xz
+RUN tar -xf node-v14.18.3-linux-x64.tar.xz -C /usr/local/ && rm node-v14.18.3-linux-x64.tar.xz
+ENV PATH="/usr/local/node-v14.18.3-linux-x64/bin:${PATH}"
+
+# Install Miniconda.
+RUN curl -s https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linux-x86_64.sh -o Miniconda3-py38_4.10.3-Linux-x86_64.sh
+ENV CONDAROOT=/go/src/thiago.pub/conda
+RUN mkdir -p ${CONDAROOT}
+RUN bash Miniconda3-py38_4.10.3-Linux-x86_64.sh -b -p ${CONDAROOT} -f
+ENV PATH="${CONDAROOT}/bin:${PATH}"
+
+# Install Orekit dependencies.
+# Orekit 10.3.1 was installed in this environment by default, but I need 11.0.2.
+RUN conda install -y -c conda-forge \
+  orekit=11.0.2 \
+  matplotlib \
+  basemap \
+  cartopy
+
+# Install Python gRPC and space-related libraries.
+# Numba (dep of tletools) needs NumPy 1.21 or less.
+RUN pip install \
+    protobuf \
+    grpcio \
+    grpcio-health-checking \
+    grpcio-reflection \
+    grpcio-tools \
+    numpy==1.21 \
+    TLE-tools \
+    dash
+
+# Set up workdir.
 ENV CODE_ROOT=/go/src/thiago.pub/space-api
 RUN mkdir -p ${CODE_ROOT}
 WORKDIR ${CODE_ROOT}
+
+# Copy code.
 COPY google ${CODE_ROOT}/google
 COPY proto ${CODE_ROOT}/proto
 COPY src ${CODE_ROOT}/src
 COPY tools ${CODE_ROOT}/tools
+
+# Setup Orekit and mpl_toolkits.basemap.
+COPY orekit-data.zip ${CODE_ROOT}/
+ENV PROJ_LIB=${CODE_ROOT}/proj_lib
+RUN mkdir ${PROJ_LIB}
 
 # Set up Node UI.
 WORKDIR ${CODE_ROOT}/src/ui
