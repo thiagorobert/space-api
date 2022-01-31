@@ -35,14 +35,7 @@ function getOrbitVisualizerEndpoint() {
 
 const orbitVisualizerEndpoint = getOrbitVisualizerEndpoint()
 const spaceApi = new space.TleApi(new space.ApiClient(basePath=getSpaceApiEndpoint()))
-
-let template
-fs.readFile(__dirname + '/static/index.template', 'utf-8', function (err, data) {
-  if (err) {
-    return console.error(err)
-  }
-  template = data
-})
+const template = fs.readFileSync(__dirname + '/static/index.template', 'utf-8')
 
 function bodyToTleData(body) {
   const tleData = new space.TleData()
@@ -62,10 +55,12 @@ function bodyToTleData(body) {
    I didn't find a reasonable parser for that, so I simply retrieve the lines
    I need from the body and trim them.
    */
-  const bodyParts = body.split('\r\n').filter(e =>  e)  // Remove empty strings.
-  tleData.name = bodyParts[2].trimLeft().trim()
-  tleData.line1 = bodyParts[3].trimLeft().trim()
-  tleData.line2 = bodyParts[4].trimLeft().trim()
+  const bodyParts = body.split('\r\n').filter(e => e)  // Remove empty strings.
+  if (bodyParts.length > 5) {
+    tleData.name = bodyParts[2].trimLeft().trim()
+    tleData.line1 = bodyParts[3].trimLeft().trim()
+    tleData.line2 = bodyParts[4].trimLeft().trim()
+  }
   return tleData
 }
 
@@ -76,51 +71,67 @@ function decodedToHtml(decoded) {
 }
 
 function process(tleData, out) {
-  let decoded = ''
-  const decodeReq = new space.TleToOrbitReq()
-  decodeReq.tleData = tleData
-  spaceApi.tleDecode(decodeReq, function(error, data, response) {
-    if (error) {
-      console.error(error)
-    } else {
-      decoded = data.decoded
-    }
+  let outError = ''
+  const decodePromise = new Promise((resolve, reject) => {
+    const decodeReq = new space.TleToOrbitReq()
+    decodeReq.tleData = tleData
+    spaceApi.tleDecode(decodeReq, function (error, data, response) {
+      if (error) {
+        console.error(error)
+        outError += error
+        reject(error)
+      } else {
+        resolve(data.decoded)
+      }
+    })
   })
 
-  let orbit = ''
-  const toOrbitReq = new space.TleToOrbitReq()
-  toOrbitReq.tleData = tleData
-  spaceApi.tleToOrbit(toOrbitReq, function(error, data, response) {
-    if (error) {
-      console.error(error)
-    } else {
-      orbit = data.orbit
-    }
+  const orbitPromise = new Promise((resolve, reject) => {
+    const toOrbitReq = new space.TleToOrbitReq()
+    toOrbitReq.tleData = tleData
+    spaceApi.tleToOrbit(toOrbitReq, function (error, data, response) {
+      if (error) {
+        console.error(error)
+        outError += error
+        reject(error)
+      } else {
+        resolve(data.orbit)
+      }
+    })
   })
 
-  let corridor = ''
-  const corridorReq = new space.TleToCorridorReq()
-  corridorReq.tleData = tleData
-  spaceApi.tleToCorridor(corridorReq, async function(error, data, response) {
-    if (error) {
-      console.error(error)
-    } else {
-      corridor = data.corridor
-      out.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'})
-      // TODO: adding a delay to ensure this returns in time to be rendered; should be a promisse.
-      await new Promise(r => setTimeout(r, 500))
-      const rendered = mustache.render(template,
-          {
-            tle: [tleData.name, tleData.line1, tleData.line2].join('\n'),
-            corridor: corridor,
-            decoded: decodedToHtml(decoded),
-            orbit: '<b>Orbit:</b> ' + orbit,
-            visualization: `<iframe class="orbit-visualization" src="${orbitVisualizerEndpoint}"></iframe>`
-          })
-      out.end(rendered)
-    }
+  const corridorPromise = new Promise((resolve, reject) => {
+    const corridorReq = new space.TleToCorridorReq()
+    corridorReq.tleData = tleData
+    spaceApi.tleToCorridor(corridorReq, function (error, data, response) {
+      if (error) {
+        console.error(error)
+        outError += error
+        reject(error)
+      } else {
+        resolve(data.corridor)
+      }
+    })
   })
 
+  Promise.all([decodePromise, orbitPromise, corridorPromise]).then((values) => {
+    const decoded = values[0]
+    const orbit = values[1]
+    const corridor = values[2]
+    out.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'})
+    const rendered = mustache.render(template,
+        {
+          error: '',
+          tle: [tleData.name, tleData.line1, tleData.line2].join('\n'),
+          corridor: corridor,
+          decoded: decodedToHtml(decoded),
+          orbit: '<b>Orbit:</b> ' + orbit,
+          visualization: `<iframe class="orbit-visualization" src="${orbitVisualizerEndpoint}"></iframe>`
+        })
+    out.end(rendered)
+  }).catch(function () {
+    out.end(mustache.render(template, {error: outError}))
+  })
 }
 
 const server = http.createServer((req, res) => {

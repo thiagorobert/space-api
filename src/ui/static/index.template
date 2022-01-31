@@ -24,6 +24,9 @@
 </div>
 
 <div class="output-container">
+  <div class="error-message">
+      {{{ error }}}
+  </div>
   <div class="decoded-tle">
     {{{ decoded }}}
   </div>

@@ -1,3 +1,8 @@
+.error-message {
+    text-align: center;
+    color: darkred;
+}
+
 .tle-input-header {
     text-align: center;
     color: darkgreen;
