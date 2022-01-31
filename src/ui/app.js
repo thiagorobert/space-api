@@ -37,7 +37,7 @@ const orbitVisualizerEndpoint = getOrbitVisualizerEndpoint()
 const spaceApi = new space.TleApi(new space.ApiClient(basePath=getSpaceApiEndpoint()))
 
 let template
-fs.readFile(__dirname + '/static/index.html', 'utf-8', function (err, data) {
+fs.readFile(__dirname + '/static/index.template', 'utf-8', function (err, data) {
   if (err) {
     return console.error(err)
   }
@@ -48,7 +48,9 @@ function bodyToTleData(body) {
   const tleData = new space.TleData()
   /* This is pretty ludicrous, but it's the best I could get to.
 
-   Form posts with Content-Type 'multipart/form-data', so body looks like
+   Form posts with Content-Type 'multipart/form-data', so body looks like string
+   below, with '\r\n'.
+
    -----------------------------23605125921461961015802936950
    Content-Disposition: form-data; name="tle"
 
@@ -58,8 +60,7 @@ function bodyToTleData(body) {
    -----------------------------23605125921461961015802936950--
 
    I didn't find a reasonable parser for that, so I simply retrieve the lines
-   I need from the body (lines 3 to 5) and trim them to remove the carriage return
-   characters.
+   I need from the body and trim them.
    */
   const bodyParts = body.split('\r\n').filter(e =>  e)  // Remove empty strings.
   tleData.name = bodyParts[2].trimLeft().trim()
