@@ -1,0 +1,6 @@
+# Use cmd below to generate a post body with carriage return and new line (\r\n) after each line
+
+```
+sed -e "s/\$/@/" < landing-page-post-body | tr "@" "\\r" > test
+mv test landing-page-post-body
+```

@@ -6,6 +6,24 @@ info:
     title: Tle API
     version: 0.0.1
 paths:
+    /space/v1/tle/corridor:
+        post:
+            tags:
+                - Tle
+            operationId: Tle_ToCorridor
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TleToCorridorReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TleToCorridorRes'
     /space/v1/tle/decode:
         post:
             tags:
@@ -60,6 +78,14 @@ components:
             properties:
                 decoded:
                     type: string
+        TleToCorridorReq:
+            properties:
+                tleData:
+                    $ref: '#/components/schemas/TleData'
+        TleToCorridorRes:
+            properties:
+                corridor:
+                    type: string
         TleToOrbitReq:
             properties:
                 tleData:
@@ -67,6 +93,8 @@ components:
         TleToOrbitRes:
             properties:
                 orbit:
+                    type: string
+                visualization:
                     type: string
 tags:
     - name: Tle

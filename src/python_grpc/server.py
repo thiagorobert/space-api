@@ -19,6 +19,9 @@ _SERVICE_NAMES = (
     health.SERVICE_NAME,
 )
 
+# Start Orekit to plot corridors.
+c = corridor_plotter.Generator()
+
 
 def inputFlags():
     parser = argparse.ArgumentParser(description='Space API gRPC server')
@@ -31,16 +34,36 @@ def inputFlags():
 
 class TleService(pb2_grpc.TleServicer):
     def Decode(self, request, context):
-        req = request
-        tle_parts = [req.tle_data.name, req.tle_data.line1, req.tle_data.line2]
-        result = {'decoded': tle.Decode(tle_parts)}
+        decoded = 'ERROR'
+        try:
+            decoded = tle.Decode(request.tle_data)
+        except Exception as e:
+            print('Exception type "%s" in Decode()' % type(e).__name__)
+            print(e, flush=True)
+        result = {'decoded': str(decoded)}
         return pb2.TleDecodeRes(**result)
 
     def ToOrbit(self, request, context):
-        req = request
-        tle_parts = [req.tle_data.name, req.tle_data.line1, req.tle_data.line2]
-        result = {'orbit': tle.ToOrbit(tle_parts)}
+        orbit = 'ERROR'
+        try:
+            orbit = tle.ToOrbit(request.tle_data)
+            orbit_plotter.Plot(orbit.plot(use_3d=True, interactive=True))
+        except Exception as e:
+            print('Exception type "%s" in ToOrbit()' % type(e).__name__)
+            print(e, flush=True)
+        result = {'orbit': str(orbit)}
         return pb2.TleToOrbitRes(**result)
+
+    def ToCorridor(self, request, context):
+        corridor = ''
+        try:
+            c.GenerateCorridorImage(request.tle_data.line1, request.tle_data.line2)
+            corridor = '<img src="/static/test.png">'
+        except Exception as e:
+            print('Exception type "%s" in ToCorridor()' % type(e).__name__)
+            print(e, flush=True)
+        result = {'corridor': corridor}
+        return pb2.TleToCorridorRes(**result)
 
 
 # See https://github.com/grpc/grpc/blob/master/doc/python/server_reflection.md
@@ -69,8 +92,6 @@ def serve(opts):
 
     # Start Dash server to plot orbits.
     orbit_plotter.Start(opts.dash_port)
-    # Start Orekit to plot corridors.
-    corridor_plotter.Start()
 
     pb2_grpc.add_TleServicer_to_server(TleService(), server)
 

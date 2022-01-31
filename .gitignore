@@ -20,3 +20,6 @@ src/python_grpc/google/
 src/python_grpc/proto/
 src/ui/node_modules/
 src/ui/package-lock.json
+
+# Side-effects from local testing
+src/ui/static/*.png

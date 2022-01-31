@@ -2,9 +2,7 @@ import math
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import orekit
-vm = orekit.initVM()
 from orekit.pyhelpers import setup_orekit_curdir
-setup_orekit_curdir()
 from org.orekit.utils import Constants
 from org.orekit.propagation.analytical.tle import TLE
 from org.orekit.propagation.analytical.tle import TLEPropagator
@@ -20,12 +18,8 @@ STEP = 10.0
 ANGULAR_OFFSET = 35 # Sensor half width
 
 
-def Start():
-    print('Java version:', vm.java_version)
-    print('Orekit version:', orekit.VERSION)
-
 # Example from
-# https://hub-binder.mybinder.ovh/user/orekit-labs-python-wrapper-974zrqlo/lab/tree/examples/Track_Corridor.ipynb
+# https://gitlab.orekit.org/orekit-labs/python-wrapper/-/blob/master/examples/Track_Corridor.ipynb
 class CorridorHandler(PythonOrekitFixedStepHandler):
     def __init__(self, angle):
         # Set up Earth model.
@@ -76,62 +70,46 @@ class CorridorHandler(PythonOrekitFixedStepHandler):
         self.rights.append(right)
 
 
-def GenerateCorridorImage(tle_line1, tle_line2):
-    tle = TLE(tle_line1, tle_line2)
-    propagator = TLEPropagator.selectExtrapolator(tle)
-    handler = CorridorHandler(ANGULAR_OFFSET)
-    propagator.getMultiplexer().add(STEP, handler)
+class Generator():
+    def __init__(self):
+        self.vm = orekit.initVM()
+        setup_orekit_curdir()
+        self.PrintVersions()
 
-    try:
+    def PrintVersions(self):
+        print('Java version:', self.vm.java_version)
+        print('Orekit version:', orekit.VERSION)
+
+    def GenerateCorridorImage(self, tle_line1, tle_line2):
+        self.vm.attachCurrentThread()
+        tle = TLE(tle_line1, tle_line2)
+        propagator = TLEPropagator.selectExtrapolator(tle)
+        handler = CorridorHandler(ANGULAR_OFFSET)
+        propagator.getMultiplexer().add(STEP, handler)
+
         start = tle.getDate()
         propagator.propagate(start, start.shiftedBy(DURATION))
-    except orekit.JavaError as e:
-        print(e)
-        return
 
-    def geoline(geopoints):
-        lon = [math.degrees(x.getLongitude()) for x in geopoints]
-        lat = [math.degrees(x.getLatitude()) for x in geopoints]
-        return lon, lat
+        def geoline(geopoints):
+            lon = [math.degrees(x.getLongitude()) for x in geopoints]
+            lat = [math.degrees(x.getLatitude()) for x in geopoints]
+            return lon, lat
 
-    # Front view.
-    plt.figure(figsize=(14, 14))
-    ax = plt.axes(projection=ccrs.PlateCarree())
-    ax.coastlines()
+        # Front view.
+        plt.figure(figsize=(14, 14))
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.coastlines()
 
-    lon, lat = geoline(handler.centers)
-    ax.plot(
-        lon, lat, transform=ccrs.Geodetic(), alpha=0.6, color='green', zorder=3)
+        lon, lat = geoline(handler.centers)
+        ax.plot(
+            lon, lat, transform=ccrs.Geodetic(), alpha=0.6, color='green', zorder=3)
 
-    lon, lat = geoline(handler.lefts)
-    ax.plot(
-        lon, lat, transform=ccrs.Geodetic(), alpha=0.6, color='blue', zorder=3)
+        lon, lat = geoline(handler.lefts)
+        ax.plot(
+            lon, lat, transform=ccrs.Geodetic(), alpha=0.6, color='blue', zorder=3)
 
-    lon, lat = geoline(handler.rights)
-    ax.plot(
-        lon, lat, transform=ccrs.Geodetic(), alpha=0.6, color='blue', zorder=3)
+        lon, lat = geoline(handler.rights)
+        ax.plot(
+            lon, lat, transform=ccrs.Geodetic(), alpha=0.6, color='blue', zorder=3)
 
-#    plt.show()
-
-    # Polar view.
-    plt.figure(figsize=(14, 14))
-    ax = plt.axes(projection=ccrs.Orthographic(
-        central_longitude=0.0, central_latitude=90.0, globe=None))
-    ax.coastlines()
-
-    ax.set_global()
-
-    ax.gridlines()
-    lon, lat = geoline(handler.centers)
-    ax.plot(
-        lon, lat, transform=ccrs.Geodetic(), alpha=0.6, color='green', zorder=3)
-
-    lon, lat = geoline(handler.lefts)
-    ax.plot(
-        lon, lat, transform=ccrs.Geodetic(), alpha=0.6, color='blue', zorder=3)
-
-    lon, lat = geoline(handler.rights)
-    ax.plot(
-        lon, lat, transform=ccrs.Geodetic(), alpha=0.6, color='blue', zorder=3)
-
-#    plt.show()
+        plt.savefig('src/ui/static/test.png', bbox_inches='tight')

@@ -1,6 +1,6 @@
 const http = require('http')
 const https = require('https')
-const fs = require('fs');
+const fs = require('fs')
 const space = require('space-client-js')
 const static = require('node-static')
 const mustache = require('mustache')
@@ -37,7 +37,7 @@ const orbitVisualizerEndpoint = getOrbitVisualizerEndpoint()
 const spaceApi = new space.TleApi(new space.ApiClient(basePath=getSpaceApiEndpoint()))
 
 let template
-fs.readFile(__dirname + '/index.html', 'utf-8', function (err, data) {
+fs.readFile(__dirname + '/static/index.html', 'utf-8', function (err, data) {
   if (err) {
     return console.error(err)
   }
@@ -61,10 +61,10 @@ function bodyToTleData(body) {
    I need from the body (lines 3 to 5) and trim them to remove the carriage return
    characters.
    */
-  const bodyParts = body.split('\n')
-  tleData.name = bodyParts[3].trim().trimLeft()
-  tleData.line1 = bodyParts[4].trim().trimLeft()
-  tleData.line2 = bodyParts[5].trim().trimLeft()
+  const bodyParts = body.split('\r\n').filter(e =>  e)  // Remove empty strings.
+  tleData.name = bodyParts[2].trimLeft().trim()
+  tleData.line1 = bodyParts[3].trimLeft().trim()
+  tleData.line2 = bodyParts[4].trimLeft().trim()
   return tleData
 }
 
@@ -75,9 +75,9 @@ function decodedToHtml(decoded) {
 }
 
 function process(tleData, out) {
+  let decoded = ''
   const decodeReq = new space.TleToOrbitReq()
   decodeReq.tleData = tleData
-  let decoded = ''
   spaceApi.tleDecode(decodeReq, function(error, data, response) {
     if (error) {
       console.error(error)
@@ -86,25 +86,40 @@ function process(tleData, out) {
     }
   })
 
+  let orbit = ''
   const toOrbitReq = new space.TleToOrbitReq()
   toOrbitReq.tleData = tleData
-  spaceApi.tleToOrbit(toOrbitReq, async function(error, data, response) {
+  spaceApi.tleToOrbit(toOrbitReq, function(error, data, response) {
     if (error) {
       console.error(error)
     } else {
+      orbit = data.orbit
+    }
+  })
+
+  let corridor = ''
+  const corridorReq = new space.TleToCorridorReq()
+  corridorReq.tleData = tleData
+  spaceApi.tleToCorridor(corridorReq, async function(error, data, response) {
+    if (error) {
+      console.error(error)
+    } else {
+      corridor = data.corridor
       out.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'})
       // TODO: adding a delay to ensure this returns in time to be rendered; should be a promisse.
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 500))
       const rendered = mustache.render(template,
           {
             tle: [tleData.name, tleData.line1, tleData.line2].join('\n'),
+            corridor: corridor,
             decoded: decodedToHtml(decoded),
-            orbit: '<b>Orbit:</b> ' + data.orbit,
+            orbit: '<b>Orbit:</b> ' + orbit,
             visualization: `<iframe class="orbit-visualization" src="${orbitVisualizerEndpoint}"></iframe>`
           })
       out.end(rendered)
     }
   })
+
 }
 
 const server = http.createServer((req, res) => {
@@ -113,8 +128,7 @@ const server = http.createServer((req, res) => {
 
   if (req.url === '/' && req.method === 'GET') {
     res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'})
-    const rendered = mustache.render(template, {})
-    res.end(rendered)
+    res.end(mustache.render(template, {}))
   } else if (req.url === '/submit' && req.method === 'POST') {
     let body = ''
     req.on('data', chunk => {

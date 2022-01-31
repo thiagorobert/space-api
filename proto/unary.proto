@@ -19,6 +19,12 @@ service Tle {
       body: "*"
     };
   }
+  rpc ToCorridor(TleToCorridorReq) returns (TleToCorridorRes) {
+    option (google.api.http) = {
+      post: "/space/v1/tle/corridor"
+      body: "*"
+    };
+  }
 }
 
 message TleData {
@@ -41,4 +47,13 @@ message TleToOrbitReq {
 
 message TleToOrbitRes {
   string orbit = 1;
+  string visualization = 2;
+}
+
+message TleToCorridorReq {
+  TleData tle_data = 1;
+}
+
+message TleToCorridorRes {
+  string corridor = 1;
 }

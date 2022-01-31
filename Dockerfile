@@ -56,7 +56,7 @@ RUN pip install \
 
 # Set up workdir.
 ENV CODE_ROOT=/go/src/thiago.pub/space-api
-RUN mkdir -p ${CODE_ROOT}
+RUN mkdir -p ${CODE_ROOT}/logs
 WORKDIR ${CODE_ROOT}
 
 # Copy code.
