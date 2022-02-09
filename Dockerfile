@@ -57,11 +57,13 @@ RUN pip install \
 # Set up workdir.
 ENV CODE_ROOT=/go/src/thiago.pub/space-api
 RUN mkdir -p ${CODE_ROOT}/logs
+RUN mkdir -p ${CODE_ROOT}/celestrak
 WORKDIR ${CODE_ROOT}
 
 # Copy code.
 COPY google ${CODE_ROOT}/google
 COPY proto ${CODE_ROOT}/proto
+COPY scripts ${CODE_ROOT}/scripts
 COPY src ${CODE_ROOT}/src
 COPY tools ${CODE_ROOT}/tools
 
@@ -124,9 +126,8 @@ EXPOSE 8081
 EXPOSE 9090
 # Dash server (to render orbit plots)
 EXPOSE 9091
-# Reserved for future use
+# File server
 EXPOSE 9092
 
-# Copy and run script that starts gRPC server and REST proxy.
-COPY ./bootstrap.sh ${CODE_ROOT}/bootstrap.sh
-CMD ["/go/src/thiago.pub/space-api/bootstrap.sh"]
+# Run script that starts the system (gRPC server, REST proxy, Node UI, file server).
+CMD ["/go/src/thiago.pub/space-api/scripts/bootstrap.sh"]
