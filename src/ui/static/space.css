@@ -27,10 +27,25 @@
 
 .tle-input:focus {
     box-shadow: 0 0 15px 5px #b0e0ee;
-    border: 2px solid #bebede;
+    border: 1px solid #ccc;
+    outline: none;  /* Removes thick border when selected (in Chrome). */
 }
 
 .tle-input-button {
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    margin: 2px;
+    height: 3em;
+    width: 10em;
+}
+
+.tle-input-button:hover {
+    cursor: pointer;
+    background-color: #F89900;
+}
+
+.tle-input-button:focus {
+    outline: none;  /* Removes thick border when selected (in Chrome). */
 }
 
 .output-container {
