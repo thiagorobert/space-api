@@ -23,4 +23,5 @@ src/ui/package-lock.json
 
 # Side-effects from local testing
 src/ui/static/*.png
-celestrak
+celestrak/
+debug/
