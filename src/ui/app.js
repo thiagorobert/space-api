@@ -14,6 +14,7 @@ const inputFlags = getInputFlags()
 const hostname = '0.0.0.0'
 const port = 8080
 const staticFiles = new static.Server(__dirname, { cache: 0 })
+const clientTimeoutSecs = 60 // default in 'space-client-js' library.
 
 function getSpaceApiEndpoint() {
   let endpoint = 'https://api.thiago.pub'  // default to Production.
@@ -34,7 +35,9 @@ function getOrbitVisualizerEndpoint() {
 }
 
 const orbitVisualizerEndpoint = getOrbitVisualizerEndpoint()
-const spaceApi = new space.TleApi(new space.ApiClient(basePath=getSpaceApiEndpoint()))
+const spaceClient = new space.ApiClient(basePath=getSpaceApiEndpoint())
+spaceClient.timeout = clientTimeoutSecs * 1000
+const spaceApi = new space.TleApi(spaceClient)
 const template = fs.readFileSync(__dirname + '/static/index.template', 'utf-8')
 
 function bodyToTleData(body) {
@@ -78,6 +81,7 @@ function process(tleData, out) {
     spaceApi.tleDecode(decodeReq, function (error, data, response) {
       if (error) {
         console.error(error)
+        outError += 'decodePromise error: '
         outError += error
         reject(error)
       } else {
@@ -92,6 +96,7 @@ function process(tleData, out) {
     spaceApi.tleToOrbit(toOrbitReq, function (error, data, response) {
       if (error) {
         console.error(error)
+        outError += 'orbitPromise error: '
         outError += error
         reject(error)
       } else {
@@ -106,6 +111,7 @@ function process(tleData, out) {
     spaceApi.tleToCorridor(corridorReq, function (error, data, response) {
       if (error) {
         console.error(error)
+        outError += 'corridorPromise error: '
         outError += error
         reject(error)
       } else {

@@ -40,11 +40,12 @@
 }
 
 .tle-input-button:hover {
-    cursor: pointer;
     background-color: #F89900;
+    cursor: pointer;
 }
 
 .tle-input-button:focus {
+    background-color: #F89900;
     outline: none;  /* Removes thick border when selected (in Chrome). */
 }
 
